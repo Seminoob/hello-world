@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May 16 15:33:16 2023
+
+@author: sys
+"""
+
+
+import cv2
+import glob
+import numpy as np
+
+srcImgsDir = r"E:\Abhishek\autotaxi\Dataset\train\images"
+srcSegDir = r"E:\Abhishek\autotaxi\Dataset\train\segment"
+
+destImgsDir = r"E:\Abhishek\autotaxi\Dataset\augmentedData\randomAugmentation\images"
+destSegDir = r"E:\Abhishek\autotaxi\Dataset\augmentedData\randomAugmentation\segment"
+
+
+srcImgs = glob.glob(srcImgsDir + r"\*.png")
+srcSeg = glob.glob(srcSegDir + r"\*.png")
+
+def rotate(image, deg, inter = cv2.INTER_LINEAR):
+    # dividing height and width by 2 to get the center of the image
+    height, width = image.shape[:2]
+    # get the center coordinates of the image to create the 2D rotation matrix
+    center = (width/2, height/2)
+
+    # using cv2.getRotationMatrix2D() to get the rotation matrix
+    rotate_matrix = cv2.getRotationMatrix2D(center=center, angle=deg, scale=1)
+
+    # rotate the image using cv2.warpAffine
+    rotated_image = cv2.warpAffine(src=image, M=rotate_matrix, dsize=(width, height), flags=inter)
+    return rotated_image
+lst = [0, 0, 0]
+def randomFilter(img, mean = 0, stddev = 180):
+    rn = np.random.uniform()
+    if rn < 0.333:
+        # Generate random Gaussian noise
+
+        noise = np.zeros(img.shape, np.uint8)
+        cv2.randn(noise, mean, stddev)
+        
+        # Add noise to image
+        return cv2.add(img, noise)
+    elif rn > 0.333 and rn < 0.666:
+        return cv2.GaussianBlur(image, (7, 7), 0)
+    else:
+        return img
+
+def randomCrop(img, mask):
+    rnx = np.random.randint(0, int(0.33*img.shape[1]))
+    rny = np.random.randint(0, int(0.33*img.shape[0]))
+    return img[rny:int(rny + 0.66*img.shape[0]), rnx:int(rnx + 0.66*img.shape[1]), :], mask[rny:int(rny + 0.66*img.shape[0]), rnx:int(rnx + 0.66*img.shape[1]), :]
+
+
+# Reading the image
+image = cv2.imread(srcImgs[256])
+mask = cv2.imread(srcSeg[256])
+rotated_image, mask2 = randomCrop(image, mask)
+
+cv2.imshow('Original image', image)
+cv2.imshow('Rotated image', rotated_image)
+cv2.imshow("ogmask", mask)
+cv2.imshow("modmask", mask2)
+# wait indefinitely, press any key on keyboard to exit
+cv2.waitKey(0)
+cv2.destroyAllWindows()
